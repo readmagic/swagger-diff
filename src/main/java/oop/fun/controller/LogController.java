@@ -45,8 +45,12 @@ public class LogController {
     @PostMapping(path = "/fetchDoc")
     public String fetchDoc(String projectId,String url) {
         String host = url.replace("http://","").split("/")[0];
+        if(url.contains("swagger-ui.html")){
+            host =  url.replace("http://","").replace("/swagger-ui.html","");
+        }
+        String finalHost = host;
         ThreadUtil.execAsync(()->{
-            fetchDocService.fetchGroupAndSave(host,projectId);
+            fetchDocService.fetchGroupAndSave("http://"+ finalHost,projectId);
         });
          return RenderJson.success();
      }
