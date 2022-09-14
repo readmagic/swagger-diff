@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>变更日志</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/changeLog.css">
+    <script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <style>
+        .form-control {
+            width: auto;
+            display: inline-block;
+        }
+    </style>
+
+</head>
+<body>
+<header><h1>变更日志</h1></header>
+
+<div class="modal" id="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span
+                        class="sr-only">Close</span></button>
+                <h1>获取文档</h1>
+            </div>
+            <div class="modal-body">
+                <select class="form-control form-control-sm" name="projectId" id="d_projectId" style="margin-right: 30px">
+                    <option value="">请选择项目</option>
+                    <option th:each="project: ${projects}"
+                            th:text="${project.name}"
+                            th:value="${project.id}">
+                    </option>
+                </select>
+                <input type="text" style="width:360px" class="form-control" id="docUrl" placeholder="请输入文档地址">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="fetchDocBtn">获取</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="article">
+    <div class="form search-form">
+        <form style="float: right">
+            <select class="form-control form-control-sm" name="projectId" id="projectId" style="margin-right: 30px">
+                <option value="">请选择项目</option>
+                <option th:each="project: ${projects}"
+                        th:text="${project.name}"
+                        th:value="${project.id}">
+                </option>
+            </select>
+
+            <select class="form-control form-control-sm" name="groupId" id="groupId" style="margin-right: 30px">
+                <option value="">请选择组</option>
+            </select>
+            <button class="btn" type="button" id="searchBtn">搜索</button>
+            <button class="btn" type="button" style="display: none;" id="generateBtn">对比差异</button>
+            <button class="btn" type="button" id="fetchDoc">获取文档</button>
+        </form>
+    </div>
+    <div class="search-result">
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>名称</th>
+                <th>组</th>
+                <th>是否有变动</th>
+                <th>创建时间</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody id="searchResult">
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+
+<script>
+    $("#fetchDoc").click(function () {
+        $("#dialog").modal();
+    });
+    $("#fetchDocBtn").click(function () {
+        var url = $("#docUrl").val();
+        var projectId = $("#d_projectId").val();
+        if (projectId === "") {
+            alert("请选择项目")
+        } else {
+            if (url === "") {
+                alert("请输入文档地址");
+            } else {
+                $.ajax({
+                    url: "/fetchDoc",
+                    type: "post",
+                    dataType: 'json',
+                    data: {
+                        url: url,
+                        projectId: projectId
+                    },
+                    success: function (result) {
+                        var code = result.code;
+                        if (code == 10000) {
+                            $("#dialog").modal('hide');
+                            alert("操作成功");
+                        } else {
+                            alert(result.info);
+                        }
+                    }
+                });
+            }
+        }
+    });
+
+    $("#projectId").change(function () {
+        var projectId = $("#projectId").val();
+        $("#groupId option:gt(0)").remove();
+        if (projectId === "") {
+
+        } else {
+            $.ajax({
+                url: "/groups",
+                type: "get",
+                dataType: 'json',
+                data: {
+                    projectId: projectId,
+                },
+                success: function (result) {
+                    var code = result.code;
+                    if (code == 10000) {
+                        response = result.response;
+                        showGenerateBtn = response.showGenerateBtn;
+                        if (showGenerateBtn) {
+                            $("#generateBtn").show();
+                        } else {
+                            $("#generateBtn").hide();
+                        }
+                        var groups = response.groups;
+                        for (i in groups) {
+                            var group = groups[i];
+                            $("#groupId").append("<option value='" + group.id + "'>" + group.name + "</option>");
+                        }
+
+
+                    } else {
+                        alert(result.info);
+                    }
+                }
+            });
+        }
+
+
+    });
+
+
+    $("#searchBtn").click(function () {
+        var projectId = $("#projectId").val();
+        if (projectId === "") {
+            alert("请选择项目");
+        } else {
+            var groupId = $("#groupId").val();
+            $.ajax({
+                url: "/search",
+                type: "get",
+                dataType: 'json',
+                data: {
+                    projectId: projectId,
+                    groupId: groupId
+                },
+                success: function (result) {
+                    var code = result.code;
+                    if (code == 10000) {
+                        results = result.response;
+                        $("#searchResult").html("");
+                        for (i in results) {
+                            var result = results[i];
+                            var x = result.changed ? '是' : '否';
+                            var url = "<a target='_blank' href='/detail?id=" + result.id + "'>详情</a>";
+                            var tr = "<tr>" +
+                                "<td>" + result.projectName + "</td>" +
+                                "<td>" + result.groupName + "</td>" +
+                                "<td>" + x + "</td>" +
+                                "<td>" + result.createTime + "</td>" +
+                                "<td>" + url + "</td>" +
+                                "</tr>"
+                            $("#searchResult").append(tr);
+                        }
+
+
+                    } else {
+                        alert(result.info);
+                    }
+                }
+            });
+        }
+
+    });
+
+    $("#generateBtn").click(function () {
+        var projectId = $("#projectId").val();
+        if (projectId === "") {
+            alert("请选择项目");
+        } else {
+            $.ajax({
+                url: "/generateByProject",
+                type: "post",
+                dataType: 'json',
+                data: {
+                    projectId: projectId,
+                },
+                success: function (result) {
+                    var code = result.code;
+                    if (code == 10000) {
+                        $("#searchBtn").trigger("click");
+                        $("#generateBtn").hide();
+                        alert("生成成功")
+                    } else {
+                        alert(result.info);
+                    }
+                }
+            });
+        }
+
+
+    });
+
+</script>
+</body>
+</html>

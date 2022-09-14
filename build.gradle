@@ -1,0 +1,35 @@
+plugins {
+    id 'org.springframework.boot' version '2.3.6.RELEASE'
+    id 'java'
+}
+
+apply plugin: 'io.spring.dependency-management'
+
+group = 'oop.fun'
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven {
+        allowInsecureProtocol true
+        url "http://maven.aliyun.com/nexus/content/groups/public/"
+    }
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'com.google.guava:guava:31.1-jre'
+    implementation 'com.j2html:j2html:1.2.0'
+    implementation 'io.swagger:swagger-parser:1.0.31'
+    implementation 'io.swagger:swagger-compat-spec-parser:1.0.31'
+    implementation 'cn.hutool:hutool-all:5.8.6'
+    annotationProcessor 'org.projectlombok:lombok:1.18.2'
+    compileOnly 'org.projectlombok:lombok:1.18.2'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.2'
+    testCompileOnly 'org.projectlombok:lombok:1.18.2'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
